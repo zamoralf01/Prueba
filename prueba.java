@@ -4,15 +4,17 @@
  */
 package com.umg.album;
 
-import java.awt.BorderLayout;
-import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
+import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
+import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
 
@@ -40,6 +42,7 @@ public class prueba extends javax.swing.JFrame {
     ArrayList<String> rutasImagenes;
     private Timer timer;
     private File archivoOriginal;
+    public Album album;
 
     /**
      * Creates new form prueba
@@ -50,6 +53,7 @@ public class prueba extends javax.swing.JFrame {
 
         timer = new Timer();
         fileChooser = new JFileChooser();
+        modeloLista = new DefaultListModel<>();
     }
 
     private boolean loopInfinito = false;
@@ -180,43 +184,56 @@ public class prueba extends javax.swing.JFrame {
     }
 
     private void leerArchivo(File archivo) {
-        try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            DocumentBuilder builder = factory.newDocumentBuilder();
-            Document doc = builder.parse(archivo);
-            NodeList imagenes = doc.getElementsByTagName("imagen");
-            rutasImagenes.clear();
+    try {
+        if (modeloLista == null) {
+            modeloLista = new DefaultListModel<>();
+        } else {
             modeloLista.clear();
-            for (int i = 0; i < imagenes.getLength(); i++) {
-                Node imagen = imagenes.item(i);
-                if (imagen.getNodeType() == Node.ELEMENT_NODE) {
-                    Element elemento = (Element) imagen;
-                    String ruta = elemento.getAttribute("ruta");
-                    if (rutasImagenes == null) {
-                        rutasImagenes = new ArrayList<>();
-                    }
-                    rutasImagenes.add(ruta);
-                    modeloLista.addElement(ruta.substring(ruta.lastIndexOf("/") + 1));
-                }
-            }
-            if (rutasImagenes != null && !rutasImagenes.isEmpty()) {
-                mostrarImagenGrande(rutasImagenes.get(0));
-            }
-        } catch (Exception e) {
-            JOptionPane.showMessageDialog(this, "Error al leer el archivo");
         }
+        
+        if (rutasImagenes == null) {
+            rutasImagenes = new ArrayList<>();
+        }
+        
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        Document doc = builder.parse(archivo);
+        NodeList imagenes = doc.getElementsByTagName("imagen");
+        
+        rutasImagenes.clear();
+        modeloLista.clear();
+        
+        for (int i = 0; i < imagenes.getLength(); i++) {
+            Node imagen = imagenes.item(i);
+            if (imagen.getNodeType() == Node.ELEMENT_NODE) {
+                Element elemento = (Element) imagen;
+                String ruta = elemento.getAttribute("ruta");
+                rutasImagenes.add(ruta);
+                modeloLista.addElement(ruta.substring(ruta.lastIndexOf("/") + 1));
+            }
+        }
+        
+        if (rutasImagenes != null && !rutasImagenes.isEmpty()) {
+            mostrarImagenGrande(rutasImagenes.get(0));
+        }
+    } catch (Exception e) {
+        System.out.println("Error al leer el archivo: " + e.getMessage());
     }
+}
 
     private void mostrarImagenGrande(String ruta) {
-        ImageIcon icono = new ImageIcon(ruta);
-        Image imagen = icono.getImage();
-        int ancho = 600;
-        int alto = 400;
-        imagen = imagen.getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
-        icono = new ImageIcon(imagen);
-        labelImagenGrande.setIcon(icono);
-        panelImagenGrande.revalidate();
-        panelImagenGrande.repaint();
+        if (rutasImagenes != null && !rutasImagenes.isEmpty()) {
+            if (ruta != null && !ruta.isEmpty()) {
+                try {
+                    BufferedImage imagen = ImageIO.read(new File(ruta));
+                    ImageIcon icono = new ImageIcon(imagen);
+                    JLabel label = new JLabel(icono);
+                    panelImagenGrande.add(label);
+                } catch (IOException e) {
+                    System.out.println("Error al mostrar la imagen: " + e.getMessage());
+                }
+            }
+        }
     }
 
     /**
@@ -240,7 +257,7 @@ public class prueba extends javax.swing.JFrame {
         botonIrPrimera = new javax.swing.JButton();
         botonIrUltima = new javax.swing.JButton();
         panelImagenGrande = new javax.swing.JPanel();
-        labelImagenGrande = new javax.swing.JLabel();
+        JLabel = new javax.swing.JLabel();
         jPanel3 = new javax.swing.JPanel();
         panelLista = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
@@ -322,34 +339,27 @@ public class prueba extends javax.swing.JFrame {
             }
         });
 
-        labelImagenGrande = new javax.swing.JLabel();
         panelImagenGrande.setBackground(new java.awt.Color(153, 204, 255));
         panelImagenGrande.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0), 2));
         panelImagenGrande.setPreferredSize(new java.awt.Dimension(600, 400));
 
-        labelImagenGrande.setText("Prueba");
-
-        panelImagenGrande.add(labelImagenGrande, BorderLayout.CENTER);
+        JLabel.setText("jLabel1");
 
         javax.swing.GroupLayout panelImagenGrandeLayout = new javax.swing.GroupLayout(panelImagenGrande);
         panelImagenGrande.setLayout(panelImagenGrandeLayout);
         panelImagenGrandeLayout.setHorizontalGroup(
             panelImagenGrandeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 596, Short.MAX_VALUE)
-            .addGroup(panelImagenGrandeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(panelImagenGrandeLayout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(labelImagenGrande)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, panelImagenGrandeLayout.createSequentialGroup()
+                .addContainerGap(287, Short.MAX_VALUE)
+                .addComponent(JLabel)
+                .addGap(272, 272, 272))
         );
         panelImagenGrandeLayout.setVerticalGroup(
             panelImagenGrandeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGap(0, 343, Short.MAX_VALUE)
-            .addGroup(panelImagenGrandeLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-                .addGroup(panelImagenGrandeLayout.createSequentialGroup()
-                    .addGap(0, 0, Short.MAX_VALUE)
-                    .addComponent(labelImagenGrande)
-                    .addGap(0, 0, Short.MAX_VALUE)))
+            .addGroup(panelImagenGrandeLayout.createSequentialGroup()
+                .addGap(161, 161, 161)
+                .addComponent(JLabel)
+                .addContainerGap(166, Short.MAX_VALUE))
         );
 
         javax.swing.GroupLayout jPanel2Layout = new javax.swing.GroupLayout(jPanel2);
@@ -404,8 +414,6 @@ public class prueba extends javax.swing.JFrame {
                     .addComponent(botonIrUltima))
                 .addGap(38, 38, 38))
         );
-
-        panelImagenGrande.add(labelImagenGrande, BorderLayout.CENTER);
 
         panelLista.setBackground(new java.awt.Color(204, 255, 204));
         panelLista.addMouseListener(new java.awt.event.MouseAdapter() {
@@ -713,6 +721,7 @@ public class prueba extends javax.swing.JFrame {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JLabel JLabel;
     private javax.swing.JButton botonAbrir;
     private javax.swing.JButton botonAgregarImagen;
     private javax.swing.JButton botonAtras;
@@ -733,8 +742,8 @@ public class prueba extends javax.swing.JFrame {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
-    private javax.swing.JLabel labelImagenGrande;
     private javax.swing.JPanel panelImagenGrande;
     private javax.swing.JPanel panelLista;
     // End of variables declaration//GEN-END:variables
 }
+/*hola*/
