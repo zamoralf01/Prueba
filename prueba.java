@@ -4,19 +4,20 @@
  */
 package com.umg.album;
 
-import java.awt.image.BufferedImage;
+import java.awt.BorderLayout;
+import java.awt.Component;
+import java.awt.Image;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
-import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.ImageIcon;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JOptionPane;
+import javax.swing.ListCellRenderer;
 
 import javax.swing.SwingUtilities;
 import javax.xml.parsers.DocumentBuilder;
@@ -184,56 +185,64 @@ public class prueba extends javax.swing.JFrame {
     }
 
     private void leerArchivo(File archivo) {
-    try {
-        if (modeloLista == null) {
-            modeloLista = new DefaultListModel<>();
-        } else {
-            modeloLista.clear();
-        }
-        
-        if (rutasImagenes == null) {
-            rutasImagenes = new ArrayList<>();
-        }
-        
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(archivo);
-        NodeList imagenes = doc.getElementsByTagName("imagen");
-        
-        rutasImagenes.clear();
-        modeloLista.clear();
-        
-        for (int i = 0; i < imagenes.getLength(); i++) {
-            Node imagen = imagenes.item(i);
-            if (imagen.getNodeType() == Node.ELEMENT_NODE) {
-                Element elemento = (Element) imagen;
-                String ruta = elemento.getAttribute("ruta");
-                rutasImagenes.add(ruta);
-                modeloLista.addElement(ruta.substring(ruta.lastIndexOf("/") + 1));
+        try {
+            if (modeloLista == null) {
+                modeloLista = new DefaultListModel<>();
+            } else {
+                modeloLista.clear();
             }
-        }
-        
-        if (rutasImagenes != null && !rutasImagenes.isEmpty()) {
-            mostrarImagenGrande(rutasImagenes.get(0));
-        }
-    } catch (Exception e) {
-        System.out.println("Error al leer el archivo: " + e.getMessage());
-    }
-}
 
-    private void mostrarImagenGrande(String ruta) {
-        if (rutasImagenes != null && !rutasImagenes.isEmpty()) {
-            if (ruta != null && !ruta.isEmpty()) {
-                try {
-                    BufferedImage imagen = ImageIO.read(new File(ruta));
-                    ImageIcon icono = new ImageIcon(imagen);
-                    JLabel label = new JLabel(icono);
-                    panelImagenGrande.add(label);
-                } catch (IOException e) {
-                    System.out.println("Error al mostrar la imagen: " + e.getMessage());
+            if (rutasImagenes == null) {
+                rutasImagenes = new ArrayList<>();
+            }
+
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(archivo);
+            NodeList imagenes = doc.getElementsByTagName("imagen");
+            DefaultListModel modelo = new DefaultListModel();
+            for (int i = 0; i < imagenes.getLength(); i++) {
+                Node imagen = imagenes.item(i);
+                if (imagen.getNodeType() == Node.ELEMENT_NODE) {
+                    Element elemento = (Element) imagen;
+                    String ruta = elemento.getAttribute("ruta");
+                    modelo.addElement(ruta);
                 }
             }
+            listaArchivos.setModel(modelo);
+            listaArchivos.setCellRenderer(new ListCellRenderer() {
+                public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    String ruta = (String) value;
+                    ImageIcon icono = new ImageIcon(ruta);
+                    JLabel etiquetaImagen = (JLabel) panelImagenGrande.getComponent(0); // Obtiene el JLabel en el panelImagenGrande
+                    etiquetaImagen.setIcon(icono); // Actualiza el icono del JLabel
+                    JLabel etiquetaRuta = new JLabel(ruta);
+                    panelImagenGrande.add(etiquetaRuta, BorderLayout.SOUTH); // Agrega la etiqueta de la ruta en el panelImagenGrande
+                    return etiquetaImagen; // Devuelve el JLabel actualizado
+                }
+            });
+            if (rutasImagenes != null && !rutasImagenes.isEmpty()) {
+                mostrarImagenGrande(rutasImagenes.get(0));
+            }
+        } catch (Exception e) {
+            System.out.println("Error al leer el archivo: " + e.getMessage());
         }
+    }
+
+    private void mostrarImagenGrande(String ruta) {
+        System.out.println("Mostrando imagen grande: " + ruta);
+        ImageIcon icono = new ImageIcon(ruta);
+        Image imagen = icono.getImage();
+        int ancho = panelImagenGrande.getWidth();
+        int alto = panelImagenGrande.getHeight();
+        imagen = imagen.getScaledInstance(ancho, alto, Image.SCALE_SMOOTH);
+        icono = new ImageIcon(imagen);
+        JLabel.setIcon(icono);
+        panelImagenGrande.revalidate();
+        panelImagenGrande.repaint();
+        panelImagenGrande.setLayout(new BorderLayout());
+        panelImagenGrande.add(JLabel, BorderLayout.CENTER);
+
     }
 
     /**
@@ -262,7 +271,7 @@ public class prueba extends javax.swing.JFrame {
         panelLista = new javax.swing.JPanel();
         jPanel4 = new javax.swing.JPanel();
         jScrollPane1 = new javax.swing.JScrollPane();
-        jList = new javax.swing.JList<>();
+        listaArchivos = new javax.swing.JList<>();
         javax.swing.JToolBar jToolBar = new javax.swing.JToolBar();
         botonAbrir = new javax.swing.JButton();
         botonAgregarImagen = new javax.swing.JButton();
@@ -422,12 +431,12 @@ public class prueba extends javax.swing.JFrame {
             }
         });
 
-        jList.addMouseListener(new java.awt.event.MouseAdapter() {
+        listaArchivos.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jListMouseClicked(evt);
+                listaArchivosMouseClicked(evt);
             }
         });
-        jScrollPane1.setViewportView(jList);
+        jScrollPane1.setViewportView(listaArchivos);
 
         javax.swing.GroupLayout jPanel4Layout = new javax.swing.GroupLayout(jPanel4);
         jPanel4.setLayout(jPanel4Layout);
@@ -711,13 +720,13 @@ public class prueba extends javax.swing.JFrame {
         mostrarImagenGrande(rutasImagenes.get(indiceImagen));
     }//GEN-LAST:event_botonIrUltimaActionPerformed
 
-    private void jListMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jListMouseClicked
+    private void listaArchivosMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_listaArchivosMouseClicked
         int indice = listaImagenes.getSelectedIndex();
         if (indice != -1) {
             String ruta = rutasImagenes.get(indice);
             mostrarImagenGrande(ruta);
         }
-    }//GEN-LAST:event_jListMouseClicked
+    }//GEN-LAST:event_listaArchivosMouseClicked
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -736,12 +745,12 @@ public class prueba extends javax.swing.JFrame {
     private javax.swing.JButton botonPlay;
     private javax.swing.JButton botonSiguiente;
     private javax.swing.JButton botonUsoManual;
-    public javax.swing.JList<String> jList;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanel4;
     private javax.swing.JScrollPane jScrollPane1;
+    public javax.swing.JList<String> listaArchivos;
     private javax.swing.JPanel panelImagenGrande;
     private javax.swing.JPanel panelLista;
     // End of variables declaration//GEN-END:variables
